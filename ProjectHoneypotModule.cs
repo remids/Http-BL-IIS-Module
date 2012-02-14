@@ -13,8 +13,8 @@ namespace Rds.Web.Modules
 	/// A module to check IP addresses against the Project Honeypot blacklist (http://projecthoneypot.org).
 	/// </summary>
 	/// <remarks>
-	/// Each request is a DNS query.  To minimize this module's performance impact against site requests, 
-	/// two tactics are taken:
+	/// Each request is a DNS query, a user hits a site often, and usually hitting a page implies a number
+	/// of actual requests from the server.  
 	/// 
 	///		1.	Since a given IP's status isn't likely to change from one minute to the next, we're going to
 	///			cache results (pass or fail) and on subsequent calls from the same IP we'll check the
@@ -37,7 +37,7 @@ namespace Rds.Web.Modules
 	///		&lt; honeypot accessKey="{your key}" testFailure="true|false" /&gt;
 	/// 
 	/// The testFailure defaults to false, and is provided if you want to generate blocked requests to confirm
-	/// it's working.  Don't use this in production - all requests are blocked.
+	/// it's working - the service will simply return a random evil visitor resonse.
 	/// 
 	/// There is no option currently to specify a threat threshold value, or to ignore search engines. Anything
 	/// that returns a threat level, however insignificant, will be blocked.
@@ -70,8 +70,7 @@ namespace Rds.Web.Modules
 			private readonly Boolean _CanRequery;
 			public Boolean CanRequery
 			{
-				get
-				{
+				get {
 					return _CanRequery;
 				}
 			}
@@ -88,6 +87,9 @@ namespace Rds.Web.Modules
 
 		public void Init(HttpApplication context)
 		{
+			var cfg = Config.GetConfig();
+			_HoneypotService = new HoneypotService(cfg.AccessKey, cfg.TestFailure);
+
 			context.BeginRequest += BeginRequest;
 		}
 
@@ -99,9 +101,11 @@ namespace Rds.Web.Modules
 		const Int32 REVIEW_ADDRESS_LIST_INTERVAL = 5 * 60 * 1000;	// 5 minutes
 		const Int32 HTTP_FORBIDDEN = 403;
 
-		static readonly HoneypotService _HoneypotService = new HoneypotService();
 		static readonly ConcurrentDictionary<String, IpInfo> _IpAdresses = new ConcurrentDictionary<String, IpInfo>();
 		static readonly Timer _ReviewAddressListTimer = CreateTimer();
+
+		private HoneypotService _HoneypotService;
+
 
 		private void BeginRequest(object sender, EventArgs e)
 		{
@@ -128,7 +132,7 @@ namespace Rds.Web.Modules
 		}
 
 
-		private static void StartAsyncIpVerification(String ipAddr)
+		private void StartAsyncIpVerification(String ipAddr)
 		{
 			Task.Factory.StartNew(() => {
 				var honeypotResp = _HoneypotService.Lookup(ipAddr);

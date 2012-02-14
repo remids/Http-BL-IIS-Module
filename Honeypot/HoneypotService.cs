@@ -7,17 +7,14 @@ namespace Rds.Web.Modules.Honeypot
 {
 	public class HoneypotService
 	{
-		static HoneypotService()
+		readonly String _AccessKey;
+		readonly Boolean _TestFailure;
+
+		public HoneypotService(String accessKey, Boolean testFailure = false)
 		{
-			var cfg = Config.GetConfig();
-
-			_AccessKey = cfg.AccessKey;
-			_TestFailure = cfg.TestFailure;
+			_AccessKey = accessKey;
+			_TestFailure = testFailure;
 		}
-
-		static readonly String _AccessKey;
-		static readonly Boolean _TestFailure;
-
 
 		public Response Lookup(String address)
 		{
