@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 
 namespace Rds.Web.Modules.Honeypot
 {
@@ -11,8 +12,7 @@ namespace Rds.Web.Modules.Honeypot
 			ThreatScore = -1;
 		}
 
-		public String IpAddress { get; set; }
-		public Boolean Allow { get; set; }
+		public IPAddress IpAddress { get; set; }
 		public VisitorTypes VisitorType { get; set; }
 		public Int16 LastActivity { get; set; }
 		public Int16 ThreatScore { get; set; }

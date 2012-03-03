@@ -7,14 +7,17 @@ namespace Rds.Web.Modules.Honeypot
 {
 	public class HoneypotService
 	{
-		readonly String _AccessKey;
-		readonly Boolean _TestFailure;
-
-		public HoneypotService(String accessKey, Boolean testFailure = false)
+		static HoneypotService()
 		{
-			_AccessKey = accessKey;
-			_TestFailure = testFailure;
+			var cfg = Config.GetConfig();
+
+			_AccessKey = cfg.AccessKey;
+			_TestFailure = cfg.TestFailure;
 		}
+
+		static readonly String _AccessKey;
+		static readonly Boolean _TestFailure;
+
 
 		public Response Lookup(String address)
 		{
@@ -23,8 +26,7 @@ namespace Rds.Web.Modules.Honeypot
 			// If invalid/malformed ip address, assume malicious intent and disallow
 			if (!IPAddress.TryParse(address, out ip))
 				return new Response {
-					IpAddress = address,
-					Allow = false
+					ThreatScore = Int16.MaxValue
 				};
 
 			return Lookup(ip);
@@ -77,8 +79,10 @@ namespace Rds.Web.Modules.Honeypot
 		private static Response CreateAllowableIpResponse(IPAddress ip)
 		{
 			return new Response {
-				IpAddress = ip.ToString(),
-				Allow = true
+				IpAddress = ip,
+				LastActivity = 0,
+				ThreatScore = 0,
+				VisitorType = VisitorTypes.UnknownOrSafe
 			};
 		}
 
@@ -90,8 +94,7 @@ namespace Rds.Web.Modules.Honeypot
 				throw new ArgumentException(String.Format("Honeypot lookup result appears invalid.  ({0})", result));
 
 			return new Response {
-				IpAddress = ip.ToString(),
-				Allow = false,
+				IpAddress = ip,
 				LastActivity = resBytes[1],
 				ThreatScore = resBytes[2],
 				VisitorType = (VisitorTypes)resBytes[3]
