@@ -88,6 +88,9 @@ namespace Rds.Web.Modules
 
 		public void Init(HttpApplication context)
 		{
+			var cfg = Config.GetConfig();
+			_HoneypotService = new HoneypotService(cfg.AccessKey, cfg.TestFailure); 
+			
 			context.BeginRequest += BeginRequest;
 		}
 
@@ -99,9 +102,11 @@ namespace Rds.Web.Modules
 		const Int32 REVIEW_ADDRESS_LIST_INTERVAL = 5 * 60 * 1000;	// 5 minutes
 		const Int32 HTTP_FORBIDDEN = 403;
 
-		static readonly HoneypotService _HoneypotService = new HoneypotService();
 		static readonly ConcurrentDictionary<String, IpLookupResult> _IpAdresses = new ConcurrentDictionary<String, IpLookupResult>();
 		static readonly Timer _ReviewAddressListTimer = CreateTimer();
+
+		private HoneypotService _HoneypotService;
+
 
 		private void BeginRequest(object sender, EventArgs e)
 		{
@@ -128,7 +133,7 @@ namespace Rds.Web.Modules
 		}
 
 
-		private static void StartAsyncIpVerification(String ipAddr)
+		private void StartAsyncIpVerification(String ipAddr)
 		{
 			Task.Factory.StartNew(() => {
 				var honeypotResp = _HoneypotService.Lookup(ipAddr);
