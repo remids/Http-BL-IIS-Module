@@ -39,6 +39,10 @@ namespace Rds.Web.Modules
 	/// The testFailure defaults to false, and is provided if you want to generate blocked requests to confirm
 	/// it's working.  Don't use this in production - all requests are blocked.
 	/// 
+	/// There is an optional disallowedVisitorTypes attribute that can be used, which can be populated with a
+	/// comma-separated list of VisitorTypes values.  Note, SearchEngine can't be included in this list - if
+	/// it is, it will be ignored.  By default, all types are disallowed except SearchEngine and UnknownOrSafe.
+	/// 
 	/// There is no option currently to specify a threat threshold value, or to ignore search engines. Anything
 	/// that returns a threat level, however insignificant, will be blocked.
 	/// </remarks>
@@ -89,8 +93,9 @@ namespace Rds.Web.Modules
 		public void Init(HttpApplication context)
 		{
 			var cfg = Config.GetConfig();
-			_HoneypotService = new HoneypotService(cfg.AccessKey, cfg.TestFailure); 
-			
+			_HoneypotService = new HoneypotService(cfg.AccessKey, cfg.TestFailure);
+			_DisallowedVisitorTypes = cfg.DisallowedVisitorTypes;
+
 			context.BeginRequest += BeginRequest;
 		}
 
@@ -106,6 +111,7 @@ namespace Rds.Web.Modules
 		static readonly Timer _ReviewAddressListTimer = CreateTimer();
 
 		private HoneypotService _HoneypotService;
+		private VisitorTypes _DisallowedVisitorTypes;
 
 
 		private void BeginRequest(object sender, EventArgs e)
@@ -145,9 +151,9 @@ namespace Rds.Web.Modules
 		/// <summary>
 		/// Verify response and determine whether we want to allow access or not.
 		/// </summary>
-		private static bool AllowAccess(Response resp)
+		private bool AllowAccess(Response resp)
 		{
-			if (resp.VisitorType != VisitorTypes.UnknownOrSafe && resp.VisitorType != VisitorTypes.SearchEngine)
+			if (resp.VisitorType != VisitorTypes.SearchEngine && _DisallowedVisitorTypes.HasFlag(resp.VisitorType))
 				return false;
 
 			return 0 == resp.ThreatScore;

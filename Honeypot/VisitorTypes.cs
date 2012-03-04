@@ -5,7 +5,9 @@ namespace Rds.Web.Modules.Honeypot
 	[Flags]
 	public enum VisitorTypes
 	{
+		// Can't treat this as typical flag, cause it will always be considered included!
 		SearchEngine = 0,
+
 		Suspicious = 1,
 		Harvester = 2,
 		CommentSpammer = 4,

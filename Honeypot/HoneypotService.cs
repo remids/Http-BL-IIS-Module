@@ -15,7 +15,7 @@ namespace Rds.Web.Modules.Honeypot
 		{
 			_AccessKey = accessKey;
 			_TestFailure = testFailure;
-		} 
+		}
 
 		public Response Lookup(String address)
 		{
